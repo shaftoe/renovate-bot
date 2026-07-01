@@ -17,8 +17,11 @@ module.exports = {
   // Git configuration
   gitAuthor: 'Renovate Bot <renovate-bot@noreply.forge.l3x.in>',
 
-  // Labels for PRs
+  // Labels for PRs and issues
   labels: ['dependencies'],
+
+  // Labels for dependency dashboard issues
+  dependencyDashboardLabels: ['dependencies'],
 
   // Base configuration to extend
   extends: [
