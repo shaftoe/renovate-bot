@@ -1,3 +1,11 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": "Ignore reusable workflow from alex/.profile that cannot be resolved via digest on Forgejo",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["alex/.profile"],
+      "enabled": false
+    }
+  ]
 }
