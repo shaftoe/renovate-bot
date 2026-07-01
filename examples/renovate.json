@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Example per-repository Renovate configuration - copy this to any repo you want to customize",
+  "extends": ["config:base"],
+  "enabled": true,
+  "schedule": ["every weekend"],
+  "automerge": false,
+  "major": {
+    "automerge": false
+  },
+  "labels": ["dependencies"],
+  "assignees": ["alex"]
+}

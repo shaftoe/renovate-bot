@@ -1,0 +1,46 @@
+name: Renovate Bot
+
+on:
+  schedule:
+    # Run every Day at 2 AM
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no PRs created)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+# Only DRY_RUN needed at workflow level; everything else in config.js
+env:
+  RENOVATE_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && 'full' || '' }}
+  RENOVATE_ENDPOINT: ${{ vars.MY_FORGEJO_INTERNAL_URL }}
+  LOG_LEVEL: info
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/renovatebot/renovate:40
+
+    steps:
+      - name: Checkout config
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
+
+      - name: Run Renovate
+        env:
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          GITHUB_COM_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+        run: |
+          renovate
