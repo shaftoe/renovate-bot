@@ -13,27 +13,72 @@ Centralized Renovate bot for managing dependencies across all repositories on `f
 
 ### 1. Create a Personal Access Token
 
-On your Forgejo instance:
-1. Go to Settings → Applications → Generate New Token
+Renovate uses `autodiscover: true`, which means it calls the Forgejo `/api/v1/repos/search` endpoint with the provided token and iterates over **every repository the token can access**. If the token only grants access to a single repository, autodiscover will only find that one repo — even if the account owns dozens more. The token must therefore have **instance-wide (account-wide) repository access**, not be scoped to a single repository.
+
+#### Required scopes
+
+| Scope | Permission | Required since | Why it's needed |
+|---|---|---|---|
+| `repo` | **Read & Write** | all versions | Clone repositories, create branches, commit, and push |
+| `issue` | **Read & Write** | Forgejo ≥ 1.20 | Create and update pull requests and issues |
+| `organization` | **Read** | Forgejo ≥ 1.20 | Read organization labels and team membership |
+| `user` | **Read** | all versions | Identify the bot account (used by autodiscover) |
+
+> **Why `issue` and `organization`?**
+> In Forgejo/Gitea, pull requests are modeled as issues, so the `issue` scope (read **and** write) is required to open and update PRs. The `organization` scope lets Renovate read org-level labels and teams. These were not needed on very old Gitea versions but are mandatory on any modern Forgejo (≥ 1.20).
+
+See the official Renovate Forgejo platform docs for the authoritative scope list:
+- [Renovate — Forgejo Platform](https://docs.renovatebot.com/modules/platform/forgejo/)
+
+#### Classic PAT vs fine-grained PAT
+
+Forgejo offers two token types. **The choice matters for autodiscovery.**
+
+**Classic PAT** (recommended for this bot)
+
+1. Go to **Settings → Applications → Generate New Token**
 2. Name it `Renovate Bot`
-3. Select scopes:
-   - `repo` (Read and Write)
-   - `user` (Read)
+3. Select the scopes listed in the table above
 4. Copy the token
+
+A classic PAT implicitly grants access to **every repository the account owns or is a collaborator on** — exactly what `autodiscover` needs to enumerate all repos.
+
+**Fine-grained PAT** (Forgejo ≥ 9.0)
+
+If you prefer a fine-grained token, you **must** set repository access to **"All repositories"** (or at minimum every repo Renovate should manage). A fine-grained token scoped to a single repository will cause autodiscover to find only that one repo — this is the most common cause of "Renovate only discovers one repository." Grant these permissions:
+
+- **Repository contents** — Read & Write
+- **Issues** — Read & Write
+- **Pull requests** — Read & Write
+- **Organization** (labels/teams) — Read
+- **User** — Read
+
+For more details on creating tokens and available scopes, see the official Forgejo docs:
+- [Forgejo — Access Tokens](https://forgejo.org/docs/latest/user/access-tokens/)
+- [Forgejo — OAuth2 / Token Scopes](https://forgejo.org/docs/latest/user/oauth2-provider/)
+
+#### Troubleshooting: only one repository discovered
+
+If Renovate finds just a single repository, the token is almost certainly **repo-scoped** rather than account-wide. Verify that:
+1. You are using a **classic PAT** (or a fine-grained PAT with "All repositories" access), not a token scoped to one repo.
+2. The token has at minimum `repo` (RW) + `issue` (RW) scopes — without **write** on a repository, Renovate silently skips it.
+3. The token's owner account has access to all the repositories you want Renovate to manage.
 
 ### 2. Add the token to this repository
 
-1. Go to this repository's Settings → Secrets
-2. Add a new secret named `RENOVATE_TOKEN`
+1. Go to this repository's **Settings → Secrets**
+2. Add a new secret named `PI_TOKEN`
 3. Paste the token value
+
+> The workflow file (`.forgejo/workflows/renovate.yml`) maps this secret to Renovate's `RENOVATE_TOKEN` environment variable internally, so the secret must be named `PI_TOKEN`.
 
 ### 3. Enable the workflow
 
-The workflow will run automatically every Sunday. To run manually:
+The workflow runs automatically every day at 2 AM. To run manually:
 
-1. Go to Actions → Renovate Bot
-2. Click "Run workflow"
-3. Optionally enable "Dry run" to test without creating PRs
+1. Go to **Actions → Renovate Bot**
+2. Click **"Run workflow"**
+3. Optionally enable **"Dry run"** to test without creating PRs
 
 ## Per-repository configuration
 
@@ -80,7 +125,7 @@ View the workflow run logs to see:
 ### No PRs being created
 
 1. Check the workflow logs for errors
-2. Verify the `RENOVATE_TOKEN` secret is set correctly
+2. Verify the `PI_TOKEN` secret is set correctly with the required [scopes](#1-create-a-personal-access-token)
 3. Run with `dry_run: true` to see what would happen
 4. Check that repositories have detectable dependency files
 
@@ -103,12 +148,14 @@ packageRules: [
 
 ### Specific repository not being scanned
 
-- Ensure it's under the `alex` namespace
+- Ensure the token has **write** access to the repository (Renovate silently skips repos where the token lacks push permission)
 - Check it has at least one dependency file
-- Verify the bot token has read access to the repository
+- Verify the token was created with account-wide access, not scoped to specific repos (see [Token permissions](#1-create-a-personal-access-token))
 
 ## Resources
 
 - [Renovate Documentation](https://docs.renovatebot.com/)
-- [Forgejo Platform Support](https://docs.renovatebot.com/modules/platform/forgejo/)
-- [Self-Hosted Configuration](https://docs.renovatebot.com/self-hosted-configuration/)
+- [Renovate — Forgejo Platform](https://docs.renovatebot.com/modules/platform/forgejo/)
+- [Renovate — Self-Hosted Configuration](https://docs.renovatebot.com/self-hosted-configuration/)
+- [Forgejo — Access Tokens](https://forgejo.org/docs/latest/user/access-tokens/)
+- [Forgejo — OAuth2 / Token Scopes](https://forgejo.org/docs/latest/user/oauth2-provider/)
