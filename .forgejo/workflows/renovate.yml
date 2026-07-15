@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   renovate:
-    runs-on: ubuntu-latest
+    runs-on: default
     container:
       image: docker.io/renovate/renovate:43
 
