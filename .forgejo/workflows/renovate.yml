@@ -30,7 +30,7 @@ jobs:
   renovate:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/renovatebot/renovate:43
+      image: docker.io/renovate/renovate:43
 
     steps:
       - name: Checkout config
