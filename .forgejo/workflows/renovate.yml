@@ -2,7 +2,6 @@ name: Renovate Bot
 
 on:
   schedule:
-    # Run every Day at 2 AM
     - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
@@ -15,20 +14,17 @@ on:
           - 'true'
           - 'false'
 
+enable-email-notifications: true
+
 # Only DRY_RUN needed at workflow level; everything else in config.js
 env:
   RENOVATE_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && 'full' || '' }}
-  RENOVATE_ENDPOINT: ${{ vars.MY_FORGEJO_INTERNAL_URL }}
-  LOG_LEVEL: info
-
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  RENOVATE_ENDPOINT: ${{ forgejo.server_url }}
+  LOG_LEVEL: ${{ vars.LOG_LEVEL}}
 
 jobs:
   renovate:
-    runs-on: default
+    runs-on: forgejo-host
     container:
       image: docker.io/renovate/renovate:43
 
