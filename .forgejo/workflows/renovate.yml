@@ -2,7 +2,7 @@ name: Renovate Bot
 
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 22 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
