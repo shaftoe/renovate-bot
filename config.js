@@ -1,7 +1,16 @@
 module.exports = {
-  platform: 'gitea',
+  platform: 'forgejo',
   endpoint: process.env.RENOVATE_ENDPOINT,
   token: process.env.RENOVATE_TOKEN,
+
+  // Explicitly permit access to our internal Forgejo host
+  hostRules: [
+    {
+      matchHost: new URL(process.env.FORGEJO_SERVER_URL).host,
+      hostType: 'forgejo',
+      allowInternal: true,
+    },
+  ],
 
   // Auto-discover repositories
   autodiscover: true,
@@ -30,6 +39,21 @@ module.exports = {
 
   // Package rules for common patterns
   packageRules: [
+    // Internal shared Go lib between apps in the same repo
+    {
+      description: 'Ignore internal Go lib shared between apps',
+      matchDatasources: ['go'],
+      matchPackageNames: ['forge.l3x.in/atprotozoo/platform/libs'],
+      enabled: false,
+    },
+    // Ignore reusable workflow from alex/.profile that cannot be resolved via
+    // digest on Forgejo (github-actions manager looks it up as github-digest)
+    {
+      description: 'Ignore reusable workflow from alex/.profile that cannot be resolved via digest on Forgejo',
+      matchManagers: ['github-actions'],
+      matchPackageNames: ['alex/.profile'],
+      enabled: false,
+    },
     // Group minor and patch updates for non-major deps
     {
       matchUpdateTypes: ['minor', 'patch'],
