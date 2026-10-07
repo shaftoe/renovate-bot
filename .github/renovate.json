@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard", "schedule:daily"],
+  "autodiscover": true,
+  "autodiscoverFilter": ["shaftoe/*"],
+  "timezone": "UTC",
+  "rangeStrategy": "bump",
+  "prHourlyLimit": 5,
+  "gitAuthor": "Renovate Bot <renovate-bot@users.noreply.github.com>",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group GitHub Actions updates into one PR",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    },
+    {
+      "description": "Group all npm dev dependency updates into one PR",
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "npm dev dependencies"
+    },
+    {
+      "description": "Group semantic-release tooling",
+      "matchPackageNames": [
+        "/^@semantic-release//",
+        "/^conventional-changelog-/",
+        "/semantic-release/"
+      ],
+      "groupName": "semantic-release"
+    }
+  ]
+}

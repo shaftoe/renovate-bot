@@ -1,15 +1,26 @@
 # Renovate Bot
 
-Centralized Renovate bot for managing dependencies across all repositories on `forge.l3x.in`.
+Centralized Renovate bot for managing dependencies across all repositories on `forge.l3x.in` and GitHub personal account.
+
+## Overview
+
+This repository runs **two independent Renovate setups**, one per platform:
+
+| Platform | Workflow | Config | Secret |
+|---|---|---|---|
+| Forgejo (`forge.l3x.in`) | `.forgejo/workflows/renovate.yml` | `config.js` | `RENOVATE_TOKEN` (+ `PI_TOKEN` alias, see below) |
+| GitHub (personal account) | `.github/workflows/renovate.yml` | `.github/renovate.json` | `RENOVATE_TOKEN` |
+
+Both use `autodiscover` and open dependency-update PRs. The Forgejo side targets all repos under the `alex` namespace; the GitHub side targets all repos under the `shaftoe` namespace.
 
 ## What it does
 
-- Automatically scans all repositories under the `alex` namespace
+- Automatically scans all repositories under the `alex` namespace (Forgejo) and `shaftoe` namespace (GitHub)
 - Detects dependency files (package.json, requirements.txt, requirements.yml, etc.)
 - Creates pull requests for updates
 - Groups non-major updates together
 
-## Setup
+## Forgejo setup
 
 ### 1. Create a Personal Access Token
 
@@ -66,19 +77,47 @@ If Renovate finds just a single repository, the token is almost certainly **repo
 
 ### 2. Add the token to this repository
 
-1. Go to this repository's **Settings → Secrets**
+1. Go to this repository's **Settings → Secrets** on Forgejo
 2. Add a new secret named `PI_TOKEN`
 3. Paste the token value
 
-> The workflow file (`.forgejo/workflows/renovate.yml`) maps this secret to Renovate's `RENOVATE_TOKEN` environment variable internally, so the secret must be named `PI_TOKEN`.
+> The Forgejo workflow (`.forgejo/workflows/renovate.yml`) maps this secret to Renovate's `RENOVATE_TOKEN` environment variable internally, so the secret must be named `PI_TOKEN`.
 
 ### 3. Enable the workflow
 
-The workflow runs automatically every day at 2 AM. To run manually:
+The Forgejo workflow runs automatically every day at 22:00 UTC. To run manually:
 
 1. Go to **Actions → Renovate Bot**
 2. Click **"Run workflow"**
 3. Optionally enable **"Dry run"** to test without creating PRs
+
+## GitHub setup
+
+The GitHub side uses the official [`renovatebot/github-action`](https://github.com/renovatebot/github-action) with a JSON config at `.github/renovate.json` (no `config.js` involved).
+
+### 1. Create a Personal Access Token
+
+Create a GitHub PAT with access to every repository Renovate should manage:
+
+- **Classic PAT** (recommended): select the `repo` scope. Classic PATs implicitly cover all repos the account owns or collaborates on, which is what `autodiscover` needs.
+- **Fine-grained PAT**: set repository access to **"All repositories"** (or select every repo to manage) and grant **Contents** (Read & Write) plus **Pull requests** (Read & Write).
+
+> As with Forgejo, a token scoped to a single repository means autodiscover will only find that one repository.
+
+A `GITHUB_COM_TOKEN` is not required on this side (GitHub is the platform itself); it is only needed on the Forgejo side to lift GitHub.com API rate limits.
+
+### 2. Add the token to this repository
+
+1. Go to this repository's **Settings → Secrets and variables → Actions** on GitHub
+2. Add a new secret named `RENOVATE_TOKEN`
+3. Paste the token value
+
+### 3. Enable the workflow
+
+The GitHub workflow runs automatically every day at 22:00 UTC. To run manually:
+
+1. Go to **Actions → Renovate**
+2. Click **"Run workflow"**
 
 ## Per-repository configuration
 
@@ -99,9 +138,12 @@ Add a `renovate.json` to customize behavior for a specific repository:
 
 See [Renovate Configuration Options](https://docs.renovatebot.com/configuration-options/) for all available options.
 
+- On **Forgejo**, repo-level `renovate.json` extends `config.js`
+- On **GitHub**, repo-level `renovate.json` extends `.github/renovate.json`
+
 ## Filtering by topics (alternative to namespaces)
 
-To use topics instead of namespaces, edit:
+This applies to the Forgejo side. To use topics instead of namespaces, edit:
 1. `.forgejo/workflows/renovate.yml` - comment out `AUTODISCOVER_NAMESPACES`
 2. `config.js` - change to use `autodiscoverTopics`
 
@@ -112,6 +154,8 @@ autodiscoverTopics: ['dependencies'],
 ```
 
 Then tag repositories with the `dependencies` topic on Forgejo.
+
+On GitHub, autodiscovery is filtered by `autodiscoverFilter` in `.github/renovate.json` (currently `shaftoe/*`); adjust that pattern to change scope.
 
 ## Monitoring
 
@@ -124,9 +168,9 @@ View the workflow run logs to see:
 
 ### No PRs being created
 
-1. Check the workflow logs for errors
-2. Verify the `PI_TOKEN` secret is set correctly with the required [scopes](#1-create-a-personal-access-token)
-3. Run with `dry_run: true` to see what would happen
+1. Check the workflow logs for errors (Forgejo runs and GitHub Actions runs have separate logs)
+2. Verify the token secret is set correctly — `PI_TOKEN` on Forgejo, `RENOVATE_TOKEN` on GitHub — with the required [scopes](#forgejo-setup) / [permissions](#github-setup)
+3. On Forgejo, run with `dry_run: true` to see what would happen
 4. Check that repositories have detectable dependency files
 
 ### Too many PRs
@@ -150,12 +194,15 @@ packageRules: [
 
 - Ensure the token has **write** access to the repository (Renovate silently skips repos where the token lacks push permission)
 - Check it has at least one dependency file
-- Verify the token was created with account-wide access, not scoped to specific repos (see [Token permissions](#1-create-a-personal-access-token))
+- Verify the token was created with account-wide access, not scoped to specific repos (see [Forgejo token permissions](#forgejo-setup) or [GitHub token permissions](#github-setup))
 
 ## Resources
 
 - [Renovate Documentation](https://docs.renovatebot.com/)
 - [Renovate — Forgejo Platform](https://docs.renovatebot.com/modules/platform/forgejo/)
+- [Renovate — GitHub Platform](https://docs.renovatebot.com/modules/platform/github/)
 - [Renovate — Self-Hosted Configuration](https://docs.renovatebot.com/self-hosted-configuration/)
+- [renovatebot/github-action](https://github.com/renovatebot/github-action)
 - [Forgejo — Access Tokens](https://forgejo.org/docs/latest/user/access-tokens/)
 - [Forgejo — OAuth2 / Token Scopes](https://forgejo.org/docs/latest/user/oauth2-provider/)
+- [GitHub — Creating a PAT](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
