@@ -8,6 +8,7 @@
   "prHourlyLimit": 5,
   "gitAuthor": "Renovate Bot <renovate-bot@users.noreply.github.com>",
   "labels": ["dependencies"],
+  "allowedCommands": ["^just tidy$"],
   "packageRules": [
     {
       "description": "Group GitHub Actions updates into one PR",
