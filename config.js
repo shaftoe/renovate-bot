@@ -32,6 +32,9 @@ module.exports = {
   // Labels for dependency dashboard issues
   dependencyDashboardLabels: ['dependencies'],
 
+  // Post-upgrade commands (used by repos' renovate.json postUpgradeTasks)
+  allowedCommands: ['/^just tidy$/'],
+
   // Base configuration to extend
   extends: [
     'config:recommended',
