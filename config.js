@@ -10,6 +10,11 @@ module.exports = {
       hostType: 'forgejo',
       allowInternal: true,
     },
+    {
+      matchHost: 'github.com',
+      hostType: 'github',
+      token: process.env.GITHUB_COM_TOKEN, // fine-grained PAT, public read-only is enough
+    },
   ],
 
   // Auto-discover repositories
